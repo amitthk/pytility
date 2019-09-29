@@ -36,16 +36,16 @@ class App(tk.Tk):
 
         self.btn_login = tk.Button(self,text="LogIn",command=self.do_login)
 
-        self.lbl_proxy.grid(row=0,column=0)
-        self.lst_proxy.grid(row=0,column=1)
-        self.lbl_env.grid(row=1,column=0)
-        self.lst_env.grid(row=1,column=1)
+        self.lbl_proxy.grid(sticky="w",row=0,column=0)
+        self.lst_proxy.grid(sticky="w",row=0,column=1)
+        self.lbl_env.grid(sticky="w",row=1,column=0)
+        self.lst_env.grid(sticky="w",row=1,column=1)
 
-        self.lbl_email.grid(row=2,column=0)
-        self.txt_email.grid(row=2,column=1)
-        self.lbl_passwd.grid(row=3,column=0)
-        self.entry_passwd.grid(row=3,column=1)
-        self.btn_login.grid(row=5,column=0,columnspan=2)
+        self.lbl_email.grid(sticky="w",row=2,column=0)
+        self.txt_email.grid(sticky="w",row=2,column=1)
+        self.lbl_passwd.grid(sticky="w",row=3,column=0)
+        self.entry_passwd.grid(sticky="w",row=3,column=1)
+        self.btn_login.grid(sticky="w",row=5,column=1)
 
 
         

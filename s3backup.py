@@ -44,9 +44,9 @@ def process_files_f(base_dir,archive_dir,depth, input_vars):
             with open(full_file_path, 'r') as file:
                 filedata = file.read()
 
-            bucket_file_path = input_vars.bucket_path[0]
+            bucket_file_path = input_vars.bucket_path[0]+f;
             print('uploading file {} to {}'.format(full_file_path,bucket_file_path))
-            uploaded = upload_to_s3(full_file_path, f, input_vars)
+            uploaded = upload_to_s3(full_file_path, bucket_file_path, input_vars)
 
             #archive after upload
             with open(os.path.join(archive_dir,f), 'w') as file:

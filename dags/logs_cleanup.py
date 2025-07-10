@@ -26,14 +26,14 @@ with DAG(
         task_id='clean_scheduler_logs',
         bash_command="""
         echo "Cleaning scheduler logs older than 5 days..."
-        find /var/www/airflow/logs/scheduler -type f -mtime +5 -print -delete
+        find /opt/apps/airflow/logs/scheduler -type f -mtime +5 -print -delete
         """,
     )
 
     clean_dag_logs = BashOperator(
         task_id='clean_dag_logs',
         bash_command="""
-        BASE_LOG_FOLDER="/var/www/airflow/logs"
+        BASE_LOG_FOLDER="/opt/apps/airflow/logs"
         MAX_LOG_AGE_IN_DAYS=30
         echo "Cleaning DAG logs in $BASE_LOG_FOLDER older than $MAX_LOG_AGE_IN_DAYS days..."
         find $BASE_LOG_FOLDER -type f -name '*.log' -mtime +$MAX_LOG_AGE_IN_DAYS -print -delete

@@ -351,12 +351,12 @@ AIRFLOW_HOME=$AIRFLOW_DIR
 AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB
 AIRFLOW__CORE__EXECUTOR=LocalExecutor
 AIRFLOW__CORE__FERNET_KEY=$FERNET_KEY
-AIRFLOW__WEBSERVER__SECRET_KEY=$SECRET_KEY
+AIRFLOW__API__SECRET_KEY=$SECRET_KEY
 AIRFLOW__CORE__LOAD_EXAMPLES=False
 AIRFLOW__CORE__DAGS_FOLDER=$AIRFLOW_DIR/dags
 AIRFLOW__LOGGING__BASE_LOG_FOLDER=$AIRFLOW_DIR/logs
 AIRFLOW__CORE__PLUGINS_FOLDER=$AIRFLOW_DIR/plugins
-AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
+AIRFLOW__API__EXPOSE_CONFIG=True
 AIRFLOW__CORE__AUTH_MANAGER=airflow.auth.managers.simple.SimpleAuthManager
 AIRFLOW__SIMPLE_AUTH_MANAGER__USERS=admin:admin
 PATH=$VENV_DIR/bin:\$PATH
@@ -372,7 +372,7 @@ EOF
         export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB
         export AIRFLOW__CORE__EXECUTOR=LocalExecutor
         export AIRFLOW__CORE__FERNET_KEY=$FERNET_KEY
-        export AIRFLOW__WEBSERVER__SECRET_KEY=$SECRET_KEY
+        export AIRFLOW__API__SECRET_KEY=$SECRET_KEY
         export AIRFLOW__CORE__LOAD_EXAMPLES=False
         export AIRFLOW__CORE__DAGS_FOLDER=$AIRFLOW_DIR/dags
         export AIRFLOW__LOGGING__BASE_LOG_FOLDER=$AIRFLOW_DIR/logs
@@ -391,7 +391,7 @@ EOF
         export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/$POSTGRES_DB
         export AIRFLOW__CORE__EXECUTOR=LocalExecutor
         export AIRFLOW__CORE__FERNET_KEY=$FERNET_KEY
-        export AIRFLOW__WEBSERVER__SECRET_KEY=$SECRET_KEY
+        export AIRFLOW__API__SECRET_KEY=$SECRET_KEY
         export AIRFLOW__CORE__LOAD_EXAMPLES=False
         export AIRFLOW__CORE__DAGS_FOLDER=$AIRFLOW_DIR/dags
         export AIRFLOW__LOGGING__BASE_LOG_FOLDER=$AIRFLOW_DIR/logs
@@ -413,7 +413,7 @@ create_services() {
     log "Creating systemd services..."
     
     # Airflow Webserver service (now API server)
-    sudo tee /etc/systemd/system/airflow-webserver.service > /dev/null <<EOF
+    sudo tee /etc/systemd/system/airflow-apiserver.service > /dev/null <<EOF
 [Unit]
 Description=Airflow API Server Daemon
 After=network.target $SERVICE_NAME.service
@@ -458,13 +458,38 @@ KillSignal=SIGTERM
 WantedBy=multi-user.target
 EOF
 
+    # Airflow DAG Processor service
+    sudo tee /etc/systemd/system/airflow-dag-processor.service > /dev/null <<EOF
+[Unit]
+Description=Airflow DAG Processor Daemon
+After=network.target $SERVICE_NAME.service
+Requires=$SERVICE_NAME.service
+
+[Service]
+EnvironmentFile=/etc/sysconfig/airflow
+User=airflow
+Group=airflow
+Type=simple
+ExecStart=$VENV_DIR/bin/airflow dag-processor
+Restart=on-failure
+RestartSec=10s
+WorkingDirectory=$AIRFLOW_DIR
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
     sudo systemctl daemon-reload
-    sudo systemctl enable airflow-webserver airflow-scheduler
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable airflow-apiserver airflow-scheduler airflow-dag-processor
     
     log "Starting Airflow services..."
-    sudo systemctl start airflow-webserver
+    sudo systemctl start airflow-apiserver
     sudo systemctl start airflow-scheduler
-    
+    sudo systemctl start airflow-dag-processor
     # Wait a moment for services to start
     sleep 10
     
@@ -476,7 +501,7 @@ verify_installation() {
     log "Verifying installation..."
     
     # Check if all services are running
-    local services=("$SERVICE_NAME" "airflow-webserver" "airflow-scheduler")
+    local services=("$SERVICE_NAME" "airflow-apiserver" "airflow-scheduler", "airflow-dag-processor")
     local failed_services=()
     
     for service in "${services[@]}"; do
@@ -542,23 +567,23 @@ main() {
     
     log "Installation completed successfully!"
     log ""
-    log "🎉 Airflow API server is running on http://localhost:8080"
-    log "📝 Login credentials: admin with auto-generated password"
-    log "🔍 The password can be found in the webserver logs:"
-    log "    sudo journalctl -u airflow-webserver -f | grep 'Login with username: admin, password:'"
-    log "    or check: sudo journalctl -u airflow-webserver | grep password"
+    log " Airflow API server is running on http://localhost:8080"
+    log " Login credentials: admin with auto-generated password"
+    log " The password can be found in the apiserver logs:"
+    log "    sudo journalctl -u airflow-apiserver -f | grep 'Login with username: admin, password:'"
+    log "    or check: sudo journalctl -u airflow-apiserver | grep password"
     log ""
-    log "📊 Service status:"
+    log " Service status:"
     sudo systemctl status $SERVICE_NAME --no-pager -l | head -3
-    sudo systemctl status airflow-webserver --no-pager -l | head -3
+    sudo systemctl status airflow-apiserver --no-pager -l | head -3
     sudo systemctl status airflow-scheduler --no-pager -l | head -3
     log ""
-    log "📋 To check logs:"
+    log " To check logs:"
     log "  sudo journalctl -u $SERVICE_NAME -f"
-    log "  sudo journalctl -u airflow-webserver -f"
+    log "  sudo journalctl -u airflow-apiserver -f"
     log "  sudo journalctl -u airflow-scheduler -f"
     log ""
-    log "🔧 Configuration files:"
+    log " Configuration files:"
     log "  Airflow home: $AIRFLOW_DIR"
     log "  Python: $PYTHON_DIR/bin/python3.11"
     log "  Virtual env: $VENV_DIR"

@@ -47,10 +47,11 @@ with DAG(
 
     clean_scheduler_logs = BashOperator(
         task_id='clean_scheduler_logs',
+        env={'PATH': "/usr/sbin:"+os.environ['PATH']},
         bash_command="""
             echo "Cleaning scheduler logs older than 5 days..."
-            [ -d /home/airflow/airflow/logs/scheduler ] && find /home/airflow/airflow/logs/scheduler -type f -mtime +5 -print -delete
-            [ -d /opt/apps/airflow/logs/scheduler ] && find /opt/apps/airflow/logs/scheduler -type f -mtime +5 -print -delete
+            [ -d /home/airflow/airflow/logs/scheduler ] && find /home/airflow/airflow/logs/scheduler -type f -mtime +5 -print -delete | true
+            [ -d /opt/apps/airflow/logs/scheduler ] && find /opt/apps/airflow/logs/scheduler -type f -mtime +5 -print -delete | true
         """,
     )
 

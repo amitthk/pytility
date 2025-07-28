@@ -50,8 +50,14 @@ with DAG(
         env={'PATH': "/usr/sbin:"+os.environ['PATH']},
         bash_command="""
             echo "Cleaning scheduler logs older than 5 days..."
-            [ -d /home/airflow/airflow/logs/scheduler ] && find /home/airflow/airflow/logs/scheduler -type f -mtime +5 -print -delete | true
-            [ -d /opt/apps/airflow/logs/scheduler ] && find /opt/apps/airflow/logs/scheduler -type f -mtime +5 -print -delete | true
+
+            if [ -d /home/airflow/airflow/logs/scheduler ]; then
+                find /home/airflow/airflow/logs/scheduler -type f -mtime +5 -delete -print
+            fi
+
+            if [ -d /opt/apps/airflow/logs/scheduler ]; then
+                find /opt/apps/airflow/logs/scheduler -type f -mtime +5 -delete -print
+            fi
         """,
     )
 
